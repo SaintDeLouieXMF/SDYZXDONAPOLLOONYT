@@ -1,7 +1,8 @@
 -- LIL DUDE GOT 9999+ AURA!!
 -- MY LINGANG GULI GULI LIL BRO WILL NOT SEE THIS
-local version = '0.3.0'
+-- Fixed Script
 
+local version = '0.3.0'
 print(version)
 warn('use new version...')
 
@@ -17,9 +18,6 @@ local Nurysium_Util = loadstring(game:HttpGet('https://raw.githubusercontent.com
 
 local local_player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
-
-local nurysium_Data = nil
-local hit_Sound = nil
 
 local closest_Entity = nil
 local parry_remote = nil
@@ -48,15 +46,76 @@ library:init("SDYZ IN ANOTHER W9RLD", game:GetService("UserInputService").TouchE
 library:create_section("Combat", 17440545793)
 library:create_section("World", 17440865331)
 
-function initializate(dataFolder_name: string)
+function initializate(dataFolder_name)
 	local nurysium_Data = Instance.new('Folder', game:GetService('CoreGui'))
 	nurysium_Data.Name = dataFolder_name
 
-	hit_Sound = Instance.new('Sound', nurysium_Data)
+	local hit_Sound = Instance.new('Sound', nurysium_Data)
 	hit_Sound.SoundId = 'rbxassetid://6607204501'
 	hit_Sound.Volume = 6
 end
 
+local function get_closest_entity(Object)
+	task.spawn(function()
+		local max_distance = math.huge
+
+		for _, entity in pairs(workspace.Alive:GetChildren()) do
+			if entity.Name ~= Players.LocalPlayer.Name then
+				local distance = (Object.Position - entity.HumanoidRootPart.Position).Magnitude
+
+				if distance < max_distance then
+					closest_Entity = entity
+					max_distance = distance
+				end
+			end
+		end
+	end)
+end
+
+local function get_center()
+	for _, object in pairs(workspace.Map:GetDescendants()) do
+		if object.Name == 'BALLSPAWN' then
+			return object
+		end
+	end
+end
+
+function resolve_parry_Remote()
+	for _, value in pairs(Services) do
+		local temp_remote = value:FindFirstChildOfClass('RemoteEvent')
+		if temp_remote and temp_remote.Name:find('\n') then
+			parry_remote = temp_remote
+			break
+		end
+	end
+end
+
+function walk_to(position)
+	local_player.Character.Humanoid:MoveTo(position)
+end
+
+library:create_toggle("Attack Aura", "Combat", function(toggled)
+	resolve_parry_Remote()
+	getgenv().aura_Enabled = toggled
+end)
+
+-- Implement additional toggles and functions as required, following the structure above
+
+ReplicatedStorage.Remotes.ParrySuccess.OnClientEvent:Connect(function()
+	if getgenv().hit_sound_Enabled then
+		hit_Sound:Play()
+	end
+
+	if getgenv().hit_effect_Enabled then
+		local hit_effect = game:GetObjects("rbxassetid://17407244385")[1]
+		hit_effect.Parent = Nurysium_Util.getBall()
+		hit_effect:Emit(3)
+
+		task.delay(5, function()
+			hit_effect:Destroy()
+		end)
+	end
+end)
 local function get_closest_entity(Object: Part)
 	task.spawn(function()
 		local closest
